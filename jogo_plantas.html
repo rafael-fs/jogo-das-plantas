@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Descubra as Plantas Flutuantes!</title>
+<style>
+:root{
+  --bg:#cfeef5;
+  --card:#ffffff;
+  --accent:#3aa7b6;
+  --ok:#2e9e4f;
+  --bad:#d9534f;
+  --frame1:#e6f3ea;
+  --frame2:#d9efe4;
+}
+html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+body{background: linear-gradient(180deg,var(--bg) 0%, #e7fbff 100%);display:flex;flex-direction:column;align-items:center}
+.container{max-width:1200px;width:100%;padding:18px;box-sizing:border-box}
+header{display:flex;align-items:center;gap:16px}
+h1{margin:0;font-size:28px;color:#064a56}
+.card{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(4,54,63,0.08)}
+
+/* Welcome screen */
+#welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh}
+#startBtn{margin-top:14px;background:var(--accent);color:white;border:none;padding:12px 20px;border-radius:10px;font-size:18px;cursor:pointer}
+
+/* Lake */
+#lake{position:relative;margin-top:18px;height:62vh;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 20% 20%, #bfeaf5, #9fdff3 40%, #7fd6ee 100%);box-shadow:inset 0 8px 20px rgba(0,0,0,0.06)}
+.plant{position:absolute;cursor:pointer;transform:translate(-50%,-50%);width:120px;height:110px;display:flex;align-items:center;justify-content:center}
+.plant .frame{width:100%;height:100%;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;
+    background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
+    border-radius:14px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    border: 4px solid rgba(20,60,40,0.06);
+    background-image: linear-gradient(135deg, rgba(240,250,240,0.6), rgba(230,245,235,0.6));
+}
+.plant img{max-width:100%;max-height:100%;border-radius:10px;display:block}
+.plant .label{position:absolute;bottom:-22px;background:rgba(255,255,255,0.95);padding:4px 6px;border-radius:8px;font-size:12px}
+
+/* Modal (nova versão: imagem grande em cima, texto abaixo) */
+.modal{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
+.modal .box{background:white;border-radius:14px;max-width:700px;width:100%;box-shadow:0 12px 36px rgba(2,33,41,0.25);overflow:hidden}
+.modal .topImg{width:100%;height:320px;overflow:hidden;background:#eef;display:flex;align-items:center;justify-content:center}
+.modal .topImg img{width:100%;height:100%;object-fit:cover}
+.modal .content{padding:16px}
+.modal .plantName{font-weight:700;font-size:20px;color:#04383a;margin-bottom:6px}
+.modal .questionText{color:#066b70;font-size:16px;margin-bottom:12px}
+.modal .explain{margin-top:8px;background:#f7fdfd;padding:10px;border-radius:8px;color:#073a3f}
+.modal .buttons{display:flex;gap:12px;margin-top:12px}
+.btn{flex:1;padding:12px;border-radius:10px;border:0;font-size:16px;cursor:pointer}
+.btn.primary{background:var(--accent);color:white}
+.btn.ghost{background:#f0f8f9}
+
+/* Fullscreen button (yellow) */
+#fsBtn{position:absolute;right:18px;top:18px;padding:8px 12px;border-radius:10px;background:#ffd24a;border:0;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,0.12);}
+
+/* Footer */
+footer{margin-top:12px;display:flex;justify-content:space-between;align-items:center;width:100%;max-width:1200px}
+
+/* Responsive */
+@media(max-width:820px){
+  .modal .topImg{height:200px}
+  .plant{width:100px;height:90px}
+  #lake{height:55vh}
+}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="flex:1">
+        <h1>Descubra as Plantas Flutuantes!</h1>
+        <div style="color:#08656e;font-size:14px">Jogo educativo — Mostra do Conhecimento (4º ano)</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;color:#05535d">Plantas nesta rodada: <b id="roundCount">0</b>/6</div>
+        <button id="restart" class="card" style="margin-top:6px;padding:8px 12px;border-radius:8px;cursor:pointer">Jogar novamente</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="welcome" class="card">
+        <h2 style="margin:0 0 6px">🌱 Bem-vindo ao Jogo das Plantas Aquáticas!</h2>
+        <p style="margin:0;color:#054f56">Ajude a montar um aquário saudável escolhendo as plantas corretas!</p>
+        <button id="startBtn">Começar</button>
+      </section>
+
+      <section id="gameArea" style="display:none;position:relative">
+        <button id="fsBtn" title="Tela cheia">Tela Cheia</button>
+        <div id="lake"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div style="font-size:13px;color:#02433f">Clique nas plantas para responder — depois volte ao lago.</div>
+      <div style="font-size:13px;color:#02433f">Criado por Rafael • Mostra do Conhecimento</div>
+    </footer>
+  </div>
+
+  <!-- Modal: imagem grande em cima -->
+  <div id="modal" class="modal" style="display:none">
+    <div class="box">
+      <div class="topImg">
+        <img id="modalImg" src="" alt="Imagem da planta">
+      </div>
+      <div class="content">
+        <div id="modalName" class="plantName"></div>
+        <div class="questionText">Esta planta é flutuante?</div>
+
+        <div class="buttons">
+          <button id="btnYes" class="btn primary">Sim</button>
+          <button id="btnNo" class="btn ghost">Não</button>
+        </div>
+
+        <div id="result" style="display:none">
+          <div id="resultText" style="font-size:16px;margin-top:12px"></div>
+          <div id="explanation" class="explain" style="display:none"></div>
+          <div style="text-align:right;margin-top:10px">
+            <button id="closeModal" class="btn" style="padding:8px 12px">Voltar ao lago</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- CONFIGURAÇÃO DAS PLANTAS ---
+// Use os nomes de arquivo EXATOS (coloque os JPGs na mesma pasta do HTML)
+// Se preferir incorporar em Base64, substitua as strings img: 'NOME.jpg' por 'data:image/..base64,...'
+
+const plants = [
+  { id: 'aguape', name: "Aguapé (Jacinto-d'água)", floating: true, explain: "Conhecida por suas grandes folhas redondas e seu potencial de purificação da água.", img: "Aguapé (Jacinto-d'água).jpg" },
+  { id: 'lentilha', name: "Lentilha-d'água", floating: true, explain: "Uma das menores plantas flutuantes; se prolifera com rapidez e ajuda a controlar nutrientes.", img: "Lentilha-d'água.jpg" },
+  { id: 'flutuadora_raiz_vermelha', name: "Flutuadora-de-raiz-vermelha", floating: true, explain: "Popular em aquários; tem raízes avermelhadas que atraem peixes como Betta.", img: "Flutuadora-de-raiz-vermelha (Red Root Floater).jpg" },
+  { id: 'azolla', name: "Azolla", floating: true, explain: "Planta flutuante pequena que cresce rapidamente e melhora a qualidade da água.", img: "Azolla.jpg" },
+  { id: 'salvinia', name: "Salvinia", floating: true, explain: "Planta com folhas robustas, usada em lagos ornamentais e aquários.", img: "Salvinia.jpg" },
+
+  { id: 'elodea', name: "Elódea", floating: false, explain: "Planta de crescimento rápido, conhecida pela oxigenação da água.", img: "Elódea.jpg" },
+  { id: 'valisneria', name: "Valisnéria", floating: false, explain: "Folhas alongadas, ideal para formar paisagens no fundo do aquário.", img: "Valisnéria.jpg" },
+  { id: 'anubia', name: "Anúbia", floating: false, explain: "Planta robusta que se fixa em troncos ou pedras; adapta-se a baixas luzes.", img: "Anúbia (Anubias).jpg" },
+  { id: 'musgo_java', name: "Musgo de Java", floating: false, explain: "Musgo que se fixa em superfícies e forma carpetes e áreas de refúgio.", img: "Musgo de Java.jpg" },
+  { id: 'higrofila', name: "Higrófila", floating: false, explain: "Planta versátil que se adapta a diferentes condições; comum em aquários.", img: "Higrófila.jpg" },
+  { id: 'lirio', name: "Lírio-d'água", floating: false, explain: "Planta enraizada com folhas grandes e flores que emergem da superfície.", img: "Lírio-d'água.jpg" }
+];
+
+// posições predefinidas para espalhar as plantas (em porcentagem)
+const positions = [
+  {x:22,y:25},{x:38,y:18},{x:62,y:22},{x:78,y:30},{x:18,y:60},{x:34,y:52},
+  {x:50,y:70},{x:66,y:60},{x:82,y:70},{x:48,y:38},{x:70,y:44}
+];
+
+// util
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+
+// sons simples via WebAudio
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq,duration=0.12,type='sine'){ const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=0.12; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+duration); o.stop(audioCtx.currentTime+duration) }
+function soundClick(){ playTone(880,0.06,'square') }
+function soundOk(){ playTone(880,0.16,'sine'); setTimeout(()=>playTone(1320,0.12,'sine'),80) }
+function soundErr(){ playTone(220,0.2,'sine'); setTimeout(()=>playTone(160,0.18,'sine'),120) }
+
+// elementos
+const startBtn = document.getElementById('startBtn');
+const welcome = document.getElementById('welcome');
+const gameArea = document.getElementById('gameArea');
+const lake = document.getElementById('lake');
+const modal = document.getElementById('modal');
+const modalImg = document.getElementById('modalImg');
+const modalName = document.getElementById('modalName');
+const btnYes = document.getElementById('btnYes');
+const btnNo = document.getElementById('btnNo');
+const resultBox = document.getElementById('result');
+const resultText = document.getElementById('resultText');
+const explanation = document.getElementById('explanation');
+const closeModal = document.getElementById('closeModal');
+const restart = document.getElementById('restart');
+const roundCount = document.getElementById('roundCount');
+const fsBtn = document.getElementById('fsBtn');
+
+let currentPlant = null;
+let roundPlants = [];
+let score = 0;
+let round = 0;
+const totalRounds = 5;
+
+// fullscreen
+fsBtn.addEventListener('click', ()=>{
+  const el = document.documentElement;
+  if(!document.fullscreenElement){ if(el.requestFullscreen) el.requestFullscreen(); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen(); }
+  else{ if(document.exitFullscreen) document.exitFullscreen(); }
+});
+
+// abrir modal com a planta
+function openModal(plant){
+  // iniciar contexto audio ao primeiro gesto
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  soundClick();
+  currentPlant = plant;
+  // se img for dataURL ou arquivo local, funciona igualmente
+  modalImg.src = plant.img;
+  modalName.textContent = plant.name;
+  resultBox.style.display = 'none';
+  explanation.style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+// fechar modal
+function closeModalAction(){ modal.style.display = 'none'; }
+
+btnYes.addEventListener('click', ()=>handleAnswer(true));
+btnNo.addEventListener('click', ()=>handleAnswer(false));
+closeModal.addEventListener('click', ()=>closeModalAction());
+restart.addEventListener('click', ()=>startGame());
+
+startBtn.addEventListener('click', ()=>{ welcome.style.display='none'; gameArea.style.display='block'; startGame(); });
+
+// trata resposta
+function handleAnswer(ans){
+  const correct = (ans === currentPlant.floating);
+  resultBox.style.display = 'block';
+  if(correct){
+    resultText.innerHTML = `<span style="color:var(--ok);font-weight:700">Muito bem! Você acertou!</span> ${currentPlant.name}`;
+    soundOk();
+    score++;
+  } else {
+    resultText.innerHTML = `<span style="color:var(--bad);font-weight:700">Quase! Tente novamente!</span> A resposta correta foi: <b>${currentPlant.floating? 'Sim' : 'Não'}</b>.`;
+    soundErr();
+  }
+  explanation.style.display = 'block';
+  explanation.textContent = currentPlant.explain;
+}
+
+// iniciar jogo completo
+function startGame(){
+  score = 0;
+  round = 0;
+  startRound();
+}
+
+// iniciar uma rodada (6 plantas)
+function startRound(){
+  round++;
+  if(round>totalRounds){ showResults(); return; }
+  lake.innerHTML = '';
+  // embaralha e pega 6
+  roundPlants = shuffle([...plants]).slice(0,6);
+  roundCount.textContent = roundPlants.length;
+  // escolher posições aleatórias
+  const posIdx = shuffle([...Array(positions.length).keys()]).slice(0,6);
+  roundPlants.forEach((p,i)=>{
+    const el = document.createElement('div');
+    el.className = 'plant card';
+    const left = positions[posIdx[i]].x;
+    const top = positions[posIdx[i]].y;
+    el.style.left = left + '%';
+    el.style.top = top + '%';
+    // frame + img
+    const frame = document.createElement('div');
+    frame.className = 'frame';
+    const img = document.createElement('img');
+    img.alt = p.name;
+    img.src = p.img;
+    frame.appendChild(img);
+    el.appendChild(frame);
+    const lab = document.createElement('div');
+    lab.className = 'label';
+    lab.textContent = 'Clique';
+    el.appendChild(lab);
+    el.addEventListener('click', ()=>openModal(p));
+    lake.appendChild(el);
+  });
+}
+
+// mostra tela de resultados ao final
+function showResults(){
+  modal.style.display = 'flex';
+  modalImg.src = '';
+  modalName.textContent = 'Parabéns!';
+  resultBox.style.display = 'block';
+  resultText.innerHTML = `<span style="color:var(--ok);font-weight:700">Você concluiu o jogo!</span> Sua pontuação: <b>${score}</b> de ${totalRounds}`;
+  explanation.style.display = 'block';
+  explanation.textContent = 'Obrigado por jogar! Clique em "Voltar ao lago" para jogar novamente.';
+  roundCount.textContent = '0';
+}
+
+/* Observações:
+ - Para tornar o HTML 100% único (sem arquivos externos), troque os valores p.img por dataURLs base64.
+ - Se quiser que eu já converta e incorpore as imagens em base64, me envie "Incorpore" e eu gero o HTML pronto.
+ - Caso algum nome de arquivo tenha problema (acentos), renomeie os arquivos localmente e atualize a propriedade img.
+*/
+</script>
+</body>
+</html>
